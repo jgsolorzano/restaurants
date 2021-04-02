@@ -1,12 +1,13 @@
 import { firebaseApp } from './firebase'
 import * as firebase from 'firebase'
 import 'firebase/firestore'
+
 import { fileToBlob } from './helpers'
-import { result } from 'lodash'
+import { map } from 'lodash'
 
 const db = firebase.firestore(firebaseApp)
 
-export const isUserLogged = ()=>{
+export const isUserLogged = () => {
     let isLogged = false
     firebase.auth().onAuthStateChanged((user) => {
         user !== null && (isLogged = true)
@@ -23,51 +24,52 @@ export const closeSession = () => {
 }
 
 export const registerUser = async(email, password) => {
-    const result = { statusResponse:true, error:null}
+    const result = { statusResponse: true, error: null}
     try {
         await firebase.auth().createUserWithEmailAndPassword(email, password)
     } catch (error) {
         result.statusResponse = false
         result.error = "Este correo ya ha sido registrado."
     }
-    return result 
+    return result
 }
 
 export const loginWithEmailAndPassword = async(email, password) => {
-    const result = { statusResponse:true, error:null}
+    const result = { statusResponse: true, error: null}
     try {
         await firebase.auth().signInWithEmailAndPassword(email, password)
     } catch (error) {
         result.statusResponse = false
         result.error = "Usuario o contraseña no válidos."
     }
-    return result 
+    return result
 }
 
-export const upLoadImage = async(image, path, name) => {
-    const result = {statusResponse: false, error: null, url: null}
+export const uploadImage = async(image, path, name) => {
+    const result = { statusResponse: false, error: null, url: null }
     const ref = firebase.storage().ref(path).child(name)
     const blob = await fileToBlob(image)
+
     try {
         await ref.put(blob)
         const url = await firebase.storage().ref(`${path}/${name}`).getDownloadURL()
         result.statusResponse = true
         result.url = url
     } catch (error) {
-        result.error=error
+        result.error = error
     }
-    return result 
+    return result
 }
 
 export const updateProfile = async(data) => {
-    const result = {statusResponse: true, error: null}
+    const result = { statusResponse: true, error: null }
     try {
         await firebase.auth().currentUser.updateProfile(data)
     } catch (error) {
         result.statusResponse = false
         result.error = error
     }
-    return result 
+    return result     
 }
 
 export const reauthenticate = async(password) => {
@@ -99,6 +101,144 @@ export const updatePassword = async(password) => {
     const result = { statusResponse: true, error: null }
     try {
         await firebase.auth().currentUser.updatePassword(password)
+    } catch (error) {
+        result.statusResponse = false
+        result.error = error
+    }
+    return result     
+}
+
+export const addDocumentWithoutId = async(collection, data) => {
+    //console.log(data)
+    const result = { statusResponse: true, error: null }
+    try {
+        await db.collection(collection).add(data)
+    } catch (error) {
+        result.statusResponse = false
+        result.error = error
+    }
+    return result     
+}
+
+export const getRestaurants = async(limitRestaurants) => {
+    const result = { statusResponse: true, error: null, restaurants: [], startRestaurant:null }
+    try {
+        const response = await db
+        .collection("restaurants")
+        .orderBy("createAt", "desc")
+        .limit(limitRestaurants).get()
+        if(response.docs.length>0){
+            result.startRestaurant = response.docs[response.docs.length-1]
+        }
+        response.forEach((doc) => {
+            const restaurant = doc.data()
+            restaurant.id = doc.id
+            result.restaurants.push(restaurant)
+        })
+    } catch (error) {
+        result.statusResponse = false
+        result.error = error
+    }
+    return result     
+}
+
+export const getMoreRestaurants = async(limitRestaurants, startRestaurant) => {
+    const result = { statusResponse: true, error: null, restaurants: [], startRestaurant:null }
+    try {
+        const response = await db
+        .collection("restaurants")
+        .orderBy("createAt", "desc")
+        .startAfter(startRestaurant.data().createAt)
+        .limit(limitRestaurants).get()
+        if(response.docs.length>0){
+            result.startRestaurant = response.docs[response.docs.length-1]
+        }
+        response.forEach((doc) => {
+            const restaurant = doc.data()
+            restaurant.id = doc.id
+            result.restaurants.push(restaurant)
+        })
+    } catch (error) {
+        result.statusResponse = false
+        result.error = error
+    }
+    return result     
+}
+
+export const getDocumentById = async(collection, id) => {
+    const result = { statusResponse: true, error: null, document: null }
+    try {
+        const response = await db.collection(collection).doc(id).get()
+        result.document = response.data()
+        result.document.id = response.id
+    } catch (error) {
+        result.statusResponse = false
+        result.error = error
+    }
+    
+    return result     
+}
+
+export const updateDocument = async(collection, id, data) => {
+    const result = { statusResponse: true, error: null }
+    try {
+        await db.collection(collection).doc(id).update(data)
+    } catch (error) {
+        result.statusResponse = false
+        result.error = error
+    }
+    
+    return result     
+}
+
+export const getRestaurantReviews = async(id) => {
+    const result = { statusResponse: true, error: null, reviews: [] }
+    try {
+        const response = await db
+        .collection("reviews") //.orderBy("createAt", "desc")
+        .where("idRestaurant", "==", id)
+        .get()
+        response.forEach((doc) => {
+            const review = doc.data()
+            review.id = doc.id
+            result.reviews.push(review)
+        })
+    } catch (error) {
+        //console.log(error)
+        result.statusResponse = false
+        result.error = error
+    }
+    return result
+}
+
+export const getIsFavorite = async(idRestaurant) => {
+    const result = { statusResponse: true, error: null, isFavorite: false }
+    try {
+        const response = await db
+            .collection("favorites")
+            .where("idRestaurant", "==", idRestaurant)
+            .where("idUser", "==", getCurrentUser().uid)
+            .get()
+        result.isFavorite = response.docs.length > 0
+    } catch (error) {
+        result.statusResponse = false
+        result.error = error
+    }
+    return result     
+}
+
+export const deleteFavorite = async(idRestaurant) => {
+    const result = { statusResponse: true, error: null }
+    try {
+        const response = await db
+            .collection("favorites")
+            .where("idRestaurant", "==", idRestaurant)
+            .where("idUser", "==", getCurrentUser().uid)
+            .get()
+        response.forEach(async(doc) => {
+            const favoriteId = doc.id
+            await db.collection("favorites").doc(favoriteId).delete()
+        })    
     } catch (error) {
         result.statusResponse = false
         result.error = error

@@ -1,7 +1,7 @@
 import React, {useState} from 'react'
 import { Alert, StyleSheet, Text, View } from 'react-native'
 import { Avatar } from 'react-native-elements'
-import { updateProfile, upLoadImage } from '../../utils/actions'
+import { updateProfile, uploadImage } from '../../utils/actions'
 import { loadImageFromGallery } from '../../utils/helpers'
 
 export default function InfoUser({ user, setLoading, setLoadingText }) {
@@ -14,17 +14,17 @@ export default function InfoUser({ user, setLoading, setLoadingText }) {
         } 
         setLoadingText("Actualizando Imagen...")
         setLoading(true)
-        const resultUploadImage = await upLoadImage(result.image, "avatars", user.uid)
+        const resultuploadImage = await uploadImage(result.image, "avatars", user.uid)
         
-        if(!resultUploadImage.statusResponse){
+        if(!resultuploadImage.statusResponse){
             setLoading(false)
             Alert.alert("Ha ocurrido un error al almacenar la foto de perfil.")
             return
         }
-        const resultUpdateProfile = await updateProfile({photoURL:resultUploadImage.url})
+        const resultUpdateProfile = await updateProfile({photoURL:resultuploadImage.url})
         setLoading(false)
         if(resultUpdateProfile.statusResponse){
-            setPhotoUrl(resultUploadImage.url)
+            setPhotoUrl(resultuploadImage.url)
         }else{
             Alert.alert("Ha ocurrido un error al actualizar la foto de perfil.")
         }
