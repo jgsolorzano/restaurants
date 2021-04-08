@@ -85,7 +85,7 @@ export default function Restaurant({ navigation, route }) {
   const removeFavorite = async() => {
     setLoading(true)
     const response = await deleteFavorite(restaurant.id)
-    console.log("response", response)
+    //console.log("response", response)
     setLoading(false)
     if (response.statusResponse) {
       setIsFavorite(false)

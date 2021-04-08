@@ -1,23 +1,23 @@
-import React, {useState, useEffect, useCallback}  from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { Icon } from 'react-native-elements'
-import firebase from 'firebase/app'
 import { useFocusEffect } from '@react-navigation/native'
-import Loading from '../../components/Loading'
-import { getMoreRestaurants, getRestaurants } from '../../utils/actions'
 import { size } from 'lodash'
+import firebase from 'firebase/app'
+
+import Loading from '../../components/Loading'
 import ListRestaurants from '../../components/restaurants/ListRestaurants'
+import { getMoreRestaurants, getRestaurants } from '../../utils/actions'
+
 
 export default function Restaurants({ navigation }) {
-
     const [user, setUser] = useState(null)
     const [startRestaurant, setStartRestaurant] = useState(null)
     const [restaurants, setRestaurants] = useState([])
     const [loading, setLoading] = useState(false)
 
     const limitRestaurants = 7
-    console.log("restaurants", restaurants)
-    
+
     useEffect(() => {
         firebase.auth().onAuthStateChanged((userInfo) => {
             userInfo ? setUser(true) : setUser(false)
@@ -29,44 +29,44 @@ export default function Restaurants({ navigation }) {
             async function getData() {
                 setLoading(true)
                 const response = await getRestaurants(limitRestaurants)
-                if(response.statusResponse){
+                if (response.statusResponse) {
                     setStartRestaurant(response.startRestaurant)
                     setRestaurants(response.restaurants)
                 }
-                setLoading(false)       
-            }      
-            getData()           
+                setLoading(false)
+            }
+            getData()
         }, [])
     )
-    
-    if(user === null){
-        return <Loading isVisible={true} text="Cargando..."/>
-    }
 
-    const handleLoadMore = async()=>{
-        if(!startRestaurant){
+    const handleLoadMore = async() => {
+        if (!startRestaurant) {
             return
         }
+
         setLoading(true)
-            const response = await getMoreRestaurants(limitRestaurants, startRestaurant)
-            if(response.statusResponse){
-                setStartRestaurant(response.startRestaurant)
-                setRestaurants([...restaurants, ...response.restaurants])
-            }
+        const response = await getMoreRestaurants(limitRestaurants, startRestaurant)
+        if (response.statusResponse) {
+            setStartRestaurant(response.startRestaurant)
+            setRestaurants([...restaurants, ...response.restaurants])
+        }
         setLoading(false)
-        
+    }
+
+    if (user === null) {
+        return <Loading isVisible={true} text="Cargando..."/>
     }
 
     return (
         <View style={styles.viewBody}>
             {
-                size(restaurants)>0
-                ?( <ListRestaurants
+                size(restaurants) > 0 ? (
+                    <ListRestaurants
                         restaurants={restaurants}
                         navigation={navigation}
                         handleLoadMore={handleLoadMore}
-                />)
-                :(
+                    />
+                ) : (
                     <View style={styles.notFoundView}>
                         <Text style={styles.notFoundText}>No hay restaurantes registrados.</Text>
                     </View>
@@ -77,40 +77,37 @@ export default function Restaurants({ navigation }) {
                     <Icon
                         type="material-community"
                         name="plus"
-                        color= "#442484"
+                        color="#442484"
                         reverse
                         containerStyle={styles.btnContainer}
-                        onPress={()=>navigation.navigate("add-restaurant")}
+                        onPress={() => navigation.navigate("add-restaurant")}
                     />
-
-                )                
+                )
             }
-            <Loading isVisible={loading} text="Cargando restaurantes..." />            
+            <Loading isVisible={loading} text="Cargando restaurantes..."/>
         </View>
     )
 }
 
 const styles = StyleSheet.create({
-    viewBody:{
-        flex:1
+    viewBody: {
+        flex: 1,
     },
-    btnContainer:{
+    btnContainer: {
         position: "absolute",
-        bottom:10,
+        bottom: 10,
         right: 10,
-        shadowColor:"black",
-        shadowOffset: {width:2, height: 2 },
-        shadowOpacity:0.5,
-        
+        shadowColor: "black",
+        shadowOffset: { width: 2, height: 2},
+        shadowOpacity: 0.5
     },
-    notFoundView:{
-        flex:1,
-        justifyContent:"center",
+    notFoundView: {
+        flex: 1,
+        justifyContent: "center",
         alignItems: "center"
     },
-    notFoundText:{
+    notFoundText: {
         fontSize: 18,
-        fontWeight:"bold"
-
+        fontWeight: "bold"
     }
 })

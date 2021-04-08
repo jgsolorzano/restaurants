@@ -5,8 +5,8 @@ import { size } from 'lodash'
 import { formatPhone } from '../../utils/helpers'
 
 
-
 export default function ListRestaurants({restaurants, navigation, handleLoadMore}) {
+    
     return (
         <View>
             <FlatList

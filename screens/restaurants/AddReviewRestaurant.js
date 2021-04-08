@@ -37,7 +37,7 @@ export default function AddReviewRestaurant({ navigation, route }) {
         }
 
         const responseAddReview = await addDocumentWithoutId("reviews", data)
-        console.log(data)
+        //console.log(data)
         if (!responseAddReview.statusResponse) {
             setLoading(false)
             toastRef.current.show("Error al enviar el comentario, por favor intenta más tarde.", 3000)
